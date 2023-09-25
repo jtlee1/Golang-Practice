@@ -29,7 +29,7 @@ func GetUserMove() int {
 func NewSlot() Slot {
 	var s Slot
 	s.Taken = false
-	s.Color = -50
+	s.Color = 0
 	return s
 }
 
@@ -77,241 +77,222 @@ func place(loc int, turn int, m [7][6]Slot, top []int) ([7][6]Slot, bool) {
 	return m, false
 }
 
-func checkRight(hypo, add, col, row, goal int, f *int, m [7][6]Slot, w *sync.WaitGroup) {
+func checkRight(col, row, goal int, ch chan int, m [7][6]Slot, w *sync.WaitGroup) {
 	defer w.Done()
 	if goal+col > 7 {
+		ch <- 0
 		return
 	}
-	con := hypo
+	con := 0
 	for i := 0; i < goal; i++ {
 		con += m[col+i][row].Color
 	}
 	switch con {
 	case -goal:
-		*f = -1 - add
+		//fmt.Println("RIGHT -")
+		ch <- -1
 	case goal:
-		*f = 1 + add
+		//fmt.Println("RIGHT +")
+		ch <- 1
 	default:
+		ch <- 0
 	}
 }
 
-func checkLeft(hypo, add, col, row, goal int, f *int, m [7][6]Slot, w *sync.WaitGroup) {
-	defer w.Done()
-	if -goal+col+1 < 0 {
-		return
-	}
-	con := hypo
-	for i := 0; i < goal; i++ {
-		con += m[col-i][row].Color
-	}
-	switch con {
-	case -goal:
-		*f = -1 - add
-	case goal:
-		*f = 1 + add
-	default:
-	}
-}
-
-func checkTop(hypo, add, col, row, goal int, f *int, m [7][6]Slot, w *sync.WaitGroup) {
+func checkTop(col, row, goal int, ch chan int, m [7][6]Slot, w *sync.WaitGroup) {
 	defer w.Done()
 	if goal+row > 6 {
+		ch <- 0
 		return
 	}
-	con := hypo
+	con := 0
 	for i := 0; i < goal; i++ {
 		con += m[col][row+i].Color
 	}
 	switch con {
 	case -goal:
-		*f = -1 - add
+		//fmt.Println("TOP -")
+		ch <- -1
 	case goal:
-		*f = 1 + add
+		//fmt.Println("TOP +")
+		ch <- 1
 	default:
+		ch <- 0
 	}
 }
 
-func checkBot(hypo, add, col, row, goal int, f *int, m [7][6]Slot, w *sync.WaitGroup) {
-	defer w.Done()
-	if -goal+row+1 < 0 {
-		return
-	}
-	con := hypo
-	for i := 0; i < goal; i++ {
-		con += m[col][row-i].Color
-	}
-	//fmt.Println(goal, ": ", con)
-	switch con {
-	case -goal:
-		*f = (-1 - add)
-	case goal:
-		*f = 1 + add
-	default:
-	}
-}
-
-func checkTR(hypo, add, col, row, goal int, f *int, m [7][6]Slot, w *sync.WaitGroup) {
+func checkTR(col, row, goal int, ch chan int, m [7][6]Slot, w *sync.WaitGroup) {
 	defer w.Done()
 	if goal+col > 7 {
+		ch <- 0
 		return
 	}
 	if goal+row > 6 {
+		ch <- 0
 		return
 	}
-	con := hypo
+	con := 0
 	for i := 0; i < goal; i++ {
 		con += m[col+i][row+i].Color
 	}
 	switch con {
 	case -goal:
-		*f = -1 - add
+		//fmt.Println("TR -")
+		ch <- -1
 	case goal:
-		*f = 1 + add
+		//fmt.Println("TR +")
+		ch <- 1
 	default:
+		ch <- 0
 	}
 }
-func checkTL(hypo, add, col, row, goal int, f *int, m [7][6]Slot, w *sync.WaitGroup) {
+func checkTL(col, row, goal int, ch chan int, m [7][6]Slot, w *sync.WaitGroup) {
 	defer w.Done()
 	if -goal+col+1 < 0 {
+		ch <- 0
 		return
 	}
 	if goal+row > 6 {
+		ch <- 0
 		return
 	}
-	con := hypo
+	con := 0
 	for i := 0; i < goal; i++ {
 		con += m[col-i][row+i].Color
 	}
 	switch con {
 	case -goal:
-		*f = -1 - add
+		//fmt.Println("TL -")
+		ch <- -1
 	case goal:
-		*f = 1 + add
+		//fmt.Println("TL +")
+		ch <- 1
 	default:
-	}
-}
-
-func checkBR(hypo, add, col, row, goal int, f *int, m [7][6]Slot, w *sync.WaitGroup) {
-	defer w.Done()
-	if goal+col > 7 {
-		return
-	}
-	if -goal+row+1 < 0 {
-		return
-	}
-	con := hypo
-	for i := 0; i < goal; i++ {
-		con += m[col+i][row-i].Color
-	}
-	switch con {
-	case -goal:
-		*f = -1 - add
-	case goal:
-		*f = 1 + add
-	default:
-	}
-}
-func checkBL(hypo, add, col, row, goal int, f *int, m [7][6]Slot, w *sync.WaitGroup) {
-	defer w.Done()
-	if -goal+col+1 < 0 {
-		return
-	}
-	if -goal+row+1 < 0 {
-		return
-	}
-	con := hypo
-	for i := 0; i < goal; i++ {
-		con += m[col-i][row-i].Color
-	}
-	switch con {
-	case -goal:
-		*f = -1 - add
-	case goal:
-		*f = 1 + add
-	default:
+		ch <- 0
 	}
 }
 
 func checkWinSub(m [7][6]Slot) int {
-	f := 0
+	ch := make(chan int, 69)
 	wg := new(sync.WaitGroup)
 	wg.Add(69) //21+24+12+12
 	for i := 0; i < 7; i++ {
 		for j := 0; j < 3; j++ {
-			go checkTop(0, 0, i, j, 4, &f, m, wg)
+			go checkTop(i, j, 4, ch, m, wg)
 		}
 	}
 	for i := 0; i < 4; i++ {
 		for j := 0; j < 6; j++ {
-			go checkRight(0, 0, i, j, 4, &f, m, wg)
+			go checkRight(i, j, 4, ch, m, wg)
 
 		}
 	}
 	for i := 0; i < 4; i++ {
 		for j := 0; j < 3; j++ {
-			go checkTR(0, 0, i, j, 4, &f, m, wg)
-			go checkTL(0, 0, i+3, j, 4, &f, m, wg)
+			go checkTR(i, j, 4, ch, m, wg)
+			go checkTL(i+3, j, 4, ch, m, wg)
 		}
 	}
 	wg.Wait()
+	f := 0
+	for i := 0; i < 69; i++ {
+		f += <-ch
+	}
+	close(ch)
+	if f != 0 {
+		f = f / int(math.Abs(float64(f)))
+	}
 	return f
 }
 
-func getScore(loc int, turn int, m [7][6]Slot, top []int) int {
-	s1 := [][]int{{0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}}
-	s2 := [][]int{{0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}}
-	sum := 0
-	//fmt.Println(top[loc])
+func getScore(turn int, m [7][6]Slot, goal, weight1, weight2 int) int {
+	ch := make(chan int, 42*4)
 	wg := new(sync.WaitGroup)
-	wg.Add(48)
-	for i := 2; i < 5; i++ {
-		go checkTop(turn+50, i*i, loc, top[loc], i, &s1[i-2][0], m, wg)
-		go checkBot(turn+50, i*i, loc, top[loc], i, &s1[i-2][1], m, wg)
-		go checkLeft(turn+50, i*i, loc, top[loc], i, &s1[i-2][2], m, wg)
-		go checkRight(turn+50, i*i, loc, top[loc], i, &s1[i-2][3], m, wg)
-		go checkTR(turn+50, i*i, loc, top[loc], i, &s1[i-2][4], m, wg)
-		go checkTL(turn+50, i*i, loc, top[loc], i, &s1[i-2][5], m, wg)
-		go checkBR(turn+50, i*i, loc, top[loc], i, &s1[i-2][6], m, wg)
-		go checkBL(turn+50, i*i, loc, top[loc], i, &s1[i-2][7], m, wg)
-		go checkTop(-turn+50, i*i-1, loc, top[loc], i, &s2[i-2][0], m, wg)
-		go checkBot(-turn+50, i*i-1, loc, top[loc], i, &s2[i-2][1], m, wg)
-		go checkLeft(-turn+50, i*i-1, loc, top[loc], i, &s2[i-2][2], m, wg)
-		go checkRight(-turn+50, i*i-1, loc, top[loc], i, &s2[i-2][3], m, wg)
-		go checkTR(-turn+50, i*i-1, loc, top[loc], i, &s2[i-2][4], m, wg)
-		go checkTL(-turn+50, i*i-1, loc, top[loc], i, &s2[i-2][5], m, wg)
-		go checkBR(-turn+50, i*i-1, loc, top[loc], i, &s2[i-2][6], m, wg)
-		go checkBL(-turn+50, i*i-1, loc, top[loc], i, &s2[i-2][7], m, wg)
-	}
-	wg.Wait()
-	for i := 0; i < 3; i++ {
-		for j := 0; j < 8; j++ {
-			//fmt.Println(i, ": ", s1[i][j])
-			sum += s1[i][j] * turn
-			sum += s2[i][j]
+	wg.Add(42 * 4)
+	for i := 0; i < 7; i++ {
+		for j := 0; j < 6; j++ {
+			go checkTop(i, j, goal, ch, m, wg)
+			go checkRight(i, j, goal, ch, m, wg)
+			go checkTR(i, j, goal, ch, m, wg)
+			go checkTL(i, j, goal, ch, m, wg)
 		}
 	}
+	wg.Wait()
+	f := 0
+	sum := 0
+	for i := 0; i < 168; i++ {
+		f = <-ch
+		//fmt.Println(f)
+		if f*turn > 0 {
+			sum += weight1
+		}
+		if f*turn < 0 {
+			sum += weight2
+		}
+	}
+	close(ch)
 	return sum
 }
 
-func GetMove(turn int, m [7][6]Slot, top []int) int {
+// output total estimation score
+func getTotScore(turn int, m [7][6]Slot, top []int) int {
+	spec1 := [3]int{3, 5, 10000}
+	spec2 := [3]int{2, 4, 500}
+	score := 0
+	for i := 2; i < 5; i++ {
+		score += getScore(turn, m, i, spec1[i-2], spec2[i-2])
+	}
+	return score
+}
+
+func getMaxScore(m [7][6]Slot, top []int, turn, iter int) (int, int) {
+	if iter <= 0 {
+		return 0, 0
+	}
 	s1 := []int{0, 0, 0, 0, 0, 0, 0}
+	var matrix [7][7][6]Slot
+	var matrix2 [7][7][6]Slot
+	var t1 [7][]int
+	var t2 [7][]int
 	for i := 0; i < 7; i++ {
+		t1[i] = append(t1[i], top...)
+		t2[i] = append(t2[i], top...)
+		//matrix[i] = setup(m)
+		matrix[i] = matrixCopy(m)
+		matrix2[i] = matrixCopy(m)
+		matrix[i], _ = place(i, turn, matrix[i], t1[i])
+		matrix2[i], _ = place(i, -turn, matrix2[i], t2[i])
+
 		if top[i] >= 6 {
 			s1[i] = -99999
 		} else {
-			s1[i] = getScore(i, turn, m, top) - int(math.Abs(float64(i-3)))
+			tempMax1, _ := getMaxScore(matrix[i], t1[i], -turn, iter-1)
+			//tempMax2, _ := getMaxScore(matrix2[i], t2[i], -turn, iter-1)
+			fmt.Println("get1: ", getTotScore(turn, matrix[i], t1[i]))
+			fmt.Println("get2: ", getTotScore(turn, matrix2[i], t2[i]))
+			s1[i] = getTotScore(turn, matrix[i], t1[i]) + getTotScore(turn, matrix2[i], t2[i]) - int(math.Abs(float64(i-3))) - (tempMax1)/2
 		}
 	}
-	max := 0
+	max := -10000
 	loc := 0
 	for i, e := range s1 {
-		//fmt.Println(e)
+		fmt.Println(e)
 		if i == 0 || e > max {
 			max = e
 			loc = i
 		}
 	}
-	return loc
+	return max, loc
+}
+
+func matrixCopy(m [7][6]Slot) [7][6]Slot {
+	var matrix [7][6]Slot
+	for i := 0; i < 7; i++ {
+		for j := 0; j < 6; j++ {
+			matrix[i][j] = m[i][j]
+		}
+	}
+	return matrix
 }
 
 func PrintMatrix(m [7][6]Slot) {
@@ -345,8 +326,10 @@ func CheckWin(m [7][6]Slot) {
 func main() {
 	top := []int{0, 0, 0, 0, 0, 0, 0}
 	var matrix [7][6]Slot
-	//turn := -1
 	matrix = setup(matrix)
+	//turn := -1
+	//matrix = setup(matrix)
+
 	fill := 0
 	for {
 		t := GetUserMove()
@@ -361,9 +344,9 @@ func main() {
 			}
 		}
 		CheckWin(matrix)
-		cal := GetMove(-1, matrix, top)
+		_, cal := getMaxScore(matrix, top, -1, 1)
 		matrix, _ = place(cal, -1, matrix, top)
-		fmt.Println("\033[2J")
+		//fmt.Println("\033[2J")
 		PrintMatrix(matrix)
 		CheckWin(matrix)
 		fill += 2
@@ -372,4 +355,10 @@ func main() {
 			break
 		}
 	}
+	//matrix, _ = place(2, 1, matrix, top)
+	//matrix, _ = place(3, 1, matrix, top)
+	//sc, loc := getMaxScore(matrix, top, -1, 1)
+	//fmt.Println("sc: ", sc)
+	//fmt.Println("loc: ", loc)
+
 }
