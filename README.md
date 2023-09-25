@@ -11,5 +11,6 @@ buffer: buffer vs unbuffer, unbuffer channel will need to send out before progra
 mutex: set up mutex lock to prevent racing condition </br></br>
 context: use to close multiple background process </br></br>
 closeChannel: close channel to signify listeners that the channel is closed </br></br>
+testBench: Show an example usage of test/benchmark (syntax:go test -v -bench=. or go test -v -bench=. )</br></br>
 
 connect4bot: small connect4 bot I created using goroutine to calculate the best move. </br>

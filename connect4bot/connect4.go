@@ -236,8 +236,8 @@ func getScore(turn int, m [7][6]Slot, goal, weight1, weight2 int) int {
 
 // output total estimation score
 func getTotScore(turn int, m [7][6]Slot, top []int) int {
-	spec1 := [3]int{3, 5, 10000}
-	spec2 := [3]int{2, 4, 500}
+	spec1 := [3]int{3, 10, 10000}
+	spec2 := [3]int{2, 8, 500}
 	score := 0
 	for i := 2; i < 5; i++ {
 		score += getScore(turn, m, i, spec1[i-2], spec2[i-2])
