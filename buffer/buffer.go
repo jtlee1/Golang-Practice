@@ -16,6 +16,7 @@ func sender(c chan int) {
 }
 
 func listener(c chan int) {
+	//time.Sleep(3 * time.Second)
 	for i := 0; i < 5; i = i + 1 {
 		time.Sleep(1 * time.Second)
 		v := <-c
@@ -25,7 +26,8 @@ func listener(c chan int) {
 
 func main() {
 	c := make(chan int)
-	go listener(c)
-	sender(c)
+	go sender(c)
+	listener(c)
+	//sender(c)
 
 }
