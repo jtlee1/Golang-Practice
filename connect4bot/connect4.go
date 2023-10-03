@@ -15,18 +15,29 @@ type Slot struct {
 	Color int
 }
 
-func GetUserMove() int {
-	fmt.Println("place your move (0~6) :")
+func selectLevel() int {
+	fmt.Println("select Level (1~3) 3 is hardest :")
 	var in string
 	fmt.Scanln(&in)
 	t, _ := strconv.Atoi(in)
-	if t >= 0 && t <= 6 {
+	if t > 0 && t <= 3 {
 		return t
 	}
-	return GetUserMove()
+	return selectLevel()
 }
 
-func NewSlot() Slot {
+func getUserMove() int {
+	fmt.Println("place your move (0~6) :")
+	var in string
+	fmt.Scanln(&in)
+	t, err := strconv.Atoi(in)
+	if t >= 0 && t <= 6 && err == nil {
+		return t
+	}
+	return getUserMove()
+}
+
+func newSlot() Slot {
 	var s Slot
 	s.Taken = false
 	s.Color = 0
@@ -39,7 +50,7 @@ func setup(m [7][6]Slot) [7][6]Slot {
 	for i := 0; i < 7; i++ {
 		for j := 0; j < 6; j++ {
 			go func(i, j int) {
-				m[i][j] = NewSlot()
+				m[i][j] = newSlot()
 				wg.Done()
 			}(i, j)
 		}
@@ -257,26 +268,24 @@ func getMaxScore(m [7][6]Slot, top []int, turn, iter int) (int, int) {
 	for i := 0; i < 7; i++ {
 		t1[i] = append(t1[i], top...)
 		t2[i] = append(t2[i], top...)
-		//matrix[i] = setup(m)
 		matrix[i] = matrixCopy(m)
 		matrix2[i] = matrixCopy(m)
-		matrix[i], _ = place(i, turn, matrix[i], t1[i])
-		matrix2[i], _ = place(i, -turn, matrix2[i], t2[i])
 
 		if top[i] >= 6 {
 			s1[i] = -99999
 		} else {
+			matrix[i], _ = place(i, turn, matrix[i], t1[i])
+			matrix2[i], _ = place(i, -turn, matrix2[i], t2[i])
 			tempMax1, _ := getMaxScore(matrix[i], t1[i], -turn, iter-1)
-			//tempMax2, _ := getMaxScore(matrix2[i], t2[i], -turn, iter-1)
-			fmt.Println("get1: ", getTotScore(turn, matrix[i], t1[i]))
-			fmt.Println("get2: ", getTotScore(turn, matrix2[i], t2[i]))
+			//fmt.Println("get1: ", getTotScore(turn, matrix[i], t1[i]))
+			//fmt.Println("get2: ", getTotScore(turn, matrix2[i], t2[i]))
 			s1[i] = getTotScore(turn, matrix[i], t1[i]) + getTotScore(turn, matrix2[i], t2[i]) - int(math.Abs(float64(i-3))) - (tempMax1)/2
 		}
 	}
 	max := -10000
 	loc := 0
 	for i, e := range s1 {
-		fmt.Println(e)
+		//fmt.Println(e)
 		if i == 0 || e > max {
 			max = e
 			loc = i
@@ -295,7 +304,7 @@ func matrixCopy(m [7][6]Slot) [7][6]Slot {
 	return matrix
 }
 
-func PrintMatrix(m [7][6]Slot) {
+func printMatrix(m [7][6]Slot) {
 	for row := 5; row >= 0; row-- {
 		for column := 0; column < 7; column++ {
 			fmt.Print(getColor(m[column][row].Color), " ")
@@ -308,7 +317,7 @@ func PrintMatrix(m [7][6]Slot) {
 	fmt.Print("\n")
 }
 
-func CheckWin(m [7][6]Slot) {
+func checkWin(m [7][6]Slot) {
 	con := checkWinSub(m)
 	switch con {
 	case 1:
@@ -324,41 +333,35 @@ func CheckWin(m [7][6]Slot) {
 }
 
 func main() {
+	LV := selectLevel()
 	top := []int{0, 0, 0, 0, 0, 0, 0}
 	var matrix [7][6]Slot
 	matrix = setup(matrix)
-	//turn := -1
-	//matrix = setup(matrix)
 
 	fill := 0
 	for {
-		t := GetUserMove()
+		t := getUserMove()
 		ok := true
 		matrix, ok = place(t, 1, matrix, top)
 		for {
 			if ok {
-				t = GetUserMove()
+				t = getUserMove()
 				matrix, ok = place(t, 1, matrix, top)
 			} else {
 				break
 			}
 		}
-		CheckWin(matrix)
-		_, cal := getMaxScore(matrix, top, -1, 1)
+		checkWin(matrix)
+		_, cal := getMaxScore(matrix, top, -1, LV)
 		matrix, _ = place(cal, -1, matrix, top)
-		//fmt.Println("\033[2J")
-		PrintMatrix(matrix)
-		CheckWin(matrix)
+		fmt.Println("\033[2J")
+		printMatrix(matrix)
+		checkWin(matrix)
 		fill += 2
 		if fill == 42 {
 			fmt.Println("Draw")
 			break
 		}
 	}
-	//matrix, _ = place(2, 1, matrix, top)
-	//matrix, _ = place(3, 1, matrix, top)
-	//sc, loc := getMaxScore(matrix, top, -1, 1)
-	//fmt.Println("sc: ", sc)
-	//fmt.Println("loc: ", loc)
 
 }
