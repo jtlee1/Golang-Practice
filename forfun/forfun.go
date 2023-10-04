@@ -15,7 +15,7 @@ type SyncedBuffer struct {
 
 func main() {
 	p := new(SyncedBuffer)
-	fmt.Println("foo:", p.foo)
+	println(p.foo)
 	fmt.Println("bar:", p.bar)
-	fmt.Printf("%#v\n", p)
+	//fmt.Printf("%#v\n", p)
 }

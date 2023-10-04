@@ -16,7 +16,7 @@ type Slot struct {
 }
 
 func selectLevel() int {
-	fmt.Println("select Level (1~3) 3 is hardest :")
+	fmt.Println("select Level (1~3) 3 is the hardest :")
 	var in string
 	fmt.Scanln(&in)
 	t, _ := strconv.Atoi(in)
@@ -340,12 +340,10 @@ func main() {
 
 	fill := 0
 	for {
-		t := getUserMove()
 		ok := true
-		matrix, ok = place(t, 1, matrix, top)
 		for {
 			if ok {
-				t = getUserMove()
+				t := getUserMove()
 				matrix, ok = place(t, 1, matrix, top)
 			} else {
 				break
