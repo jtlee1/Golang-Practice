@@ -4,6 +4,7 @@ import (
 	"fmt"
 )
 
+// defer will execute bottem-top
 func main() {
 	fmt.Println("function start")
 	defer fmt.Println("defer start")

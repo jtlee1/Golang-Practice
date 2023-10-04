@@ -34,10 +34,14 @@ func Trainee(ctx context.Context, name string) {
 	}
 }
 
+// cancel trigger ctx.Done()
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
+	//ctx, _ := context.WithCancel(context.Background())
 	go Master(ctx, "M1")
 	time.Sleep(5 * time.Second)
 	cancel()
+	fmt.Println("End Work")
+	time.Sleep(5 * time.Second)
 
 }

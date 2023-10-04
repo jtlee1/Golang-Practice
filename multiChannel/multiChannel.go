@@ -31,6 +31,7 @@ func Done(ch chan<- string, i time.Duration) {
 	ch <- "Done"
 }
 
+// use main as listener
 func main() {
 	ch1 := make(chan string)
 	ch2 := make(chan string)
@@ -40,6 +41,7 @@ func main() {
 	go proc2(ch2)
 	go proc3(ch3)
 	go Done(ch4, 8)
+	//use loop because for loop is an outer loop
 Loop:
 	for {
 		select {
@@ -54,5 +56,4 @@ Loop:
 			break Loop
 		}
 	}
-
 }

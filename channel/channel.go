@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+// compare loop time/result of channel, waitGroup, normal loop
+// loop with channel
 func loop(c chan int) {
 	start := time.Now()
 
@@ -30,18 +32,20 @@ func loop2() {
 	start := time.Now()
 	var slice []int
 	wg := new(sync.WaitGroup)
-	wg.Add(10)
-
+	//mu := new(sync.Mutex)
 	for i := 0; i < 10; i = i + 1 {
+		wg.Add(1)
 		go func(v int) {
 			time.Sleep(1 * time.Second)
+			//mu.Lock()
 			slice = append(slice, v)
+			//mu.Unlock()
 			//fmt.Println(v)
 			wg.Done()
 		}(i)
 	}
-	fmt.Println(slice)
 	wg.Wait()
+	fmt.Println(slice)
 
 	elapsed := time.Since(start)
 	fmt.Println("go routine with wait", elapsed)

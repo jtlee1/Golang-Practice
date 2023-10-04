@@ -9,6 +9,8 @@ func proc(i int) {
 	fmt.Println("my val is: ", i)
 	time.Sleep(1 * time.Second)
 }
+
+// shows goroutine speeds up process
 func main() {
 	//with go
 	start := time.Now()

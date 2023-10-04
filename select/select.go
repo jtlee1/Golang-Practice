@@ -14,20 +14,20 @@ func listener(ch chan int) {
 func sender(ch chan int) {
 	i := 0
 	for {
-		time.Sleep(2 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 		ch <- i
 		i++
 	}
 }
 
-func main() {
+func example1() {
 	ch1 := make(chan int)
 	ch2 := make(chan int)
 	go listener(ch1)
 	go sender(ch2)
-	fmt.Println("Original")
+	fmt.Println("both event will occur")
 	for i := 0; i < 10; i++ {
-		time.Sleep(1 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 		select {
 		case a := <-ch2:
 			fmt.Println("get ", a, " from sender")
@@ -35,10 +35,18 @@ func main() {
 		}
 		ch1 <- i
 	}
+
 	time.Sleep(1 * time.Second)
-	fmt.Println("New")
+}
+
+func example2() {
+	ch1 := make(chan int)
+	ch2 := make(chan int)
+	go listener(ch1)
+	go sender(ch2)
+	fmt.Println("only one event will occur")
 	for i := 0; i < 10; i++ {
-		time.Sleep(1 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 		select {
 		case a := <-ch2:
 			fmt.Println("get ", a, " from sender")
@@ -46,4 +54,9 @@ func main() {
 		}
 	}
 	time.Sleep(1 * time.Second)
+}
+
+func main() {
+	example2()
+
 }
