@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"slices"
 	"strconv"
 	"sync"
 )
@@ -90,12 +91,16 @@ func place(loc int, turn int, m [7][6]Slot, top []int) ([7][6]Slot, bool) {
 
 func checkRight(col, row, goal int, ch chan int, m [7][6]Slot, w *sync.WaitGroup) {
 	defer w.Done()
-	if goal+col > 7 {
+	goalSub := goal
+	if goalSub == 3 {
+		goalSub = 4
+	}
+	if goalSub+col > 7 {
 		ch <- 0
 		return
 	}
 	con := 0
-	for i := 0; i < goal; i++ {
+	for i := 0; i < goalSub; i++ {
 		con += m[col+i][row].Color
 	}
 	switch con {
@@ -112,12 +117,16 @@ func checkRight(col, row, goal int, ch chan int, m [7][6]Slot, w *sync.WaitGroup
 
 func checkTop(col, row, goal int, ch chan int, m [7][6]Slot, w *sync.WaitGroup) {
 	defer w.Done()
-	if goal+row > 6 {
+	goalSub := goal
+	if goalSub == 3 {
+		goalSub = 4
+	}
+	if goalSub+row > 6 {
 		ch <- 0
 		return
 	}
 	con := 0
-	for i := 0; i < goal; i++ {
+	for i := 0; i < goalSub; i++ {
 		con += m[col][row+i].Color
 	}
 	switch con {
@@ -134,16 +143,20 @@ func checkTop(col, row, goal int, ch chan int, m [7][6]Slot, w *sync.WaitGroup) 
 
 func checkTR(col, row, goal int, ch chan int, m [7][6]Slot, w *sync.WaitGroup) {
 	defer w.Done()
-	if goal+col > 7 {
+	goalSub := goal
+	if goalSub == 3 {
+		goalSub = 4
+	}
+	if goalSub+col > 7 {
 		ch <- 0
 		return
 	}
-	if goal+row > 6 {
+	if goalSub+row > 6 {
 		ch <- 0
 		return
 	}
 	con := 0
-	for i := 0; i < goal; i++ {
+	for i := 0; i < goalSub; i++ {
 		con += m[col+i][row+i].Color
 	}
 	switch con {
@@ -159,16 +172,20 @@ func checkTR(col, row, goal int, ch chan int, m [7][6]Slot, w *sync.WaitGroup) {
 }
 func checkTL(col, row, goal int, ch chan int, m [7][6]Slot, w *sync.WaitGroup) {
 	defer w.Done()
-	if -goal+col+1 < 0 {
+	goalSub := goal
+	if goalSub == 3 {
+		goalSub = 4
+	}
+	if -goalSub+col+1 < 0 {
 		ch <- 0
 		return
 	}
-	if goal+row > 6 {
+	if goalSub+row > 6 {
 		ch <- 0
 		return
 	}
 	con := 0
-	for i := 0; i < goal; i++ {
+	for i := 0; i < goalSub; i++ {
 		con += m[col-i][row+i].Color
 	}
 	switch con {
@@ -262,7 +279,7 @@ func getScore(turn int, m [7][6]Slot, goal, weight1, weight2 int) int {
 // output total estimation score
 func getTotScore(turn int, m [7][6]Slot, top []int) int {
 	spec1 := [3]int{3, 10, 10000}
-	spec2 := [3]int{2, 8, 500}
+	spec2 := [3]int{2, 8, 9999}
 	score := 0
 	for i := 2; i < 5; i++ {
 		score += getScore(turn, m, i, spec1[i-2], spec2[i-2])
@@ -293,7 +310,7 @@ func getMaxScore(m [7][6]Slot, top []int, turn, iter int) (int, int) {
 			tempMax1, _ := getMaxScore(matrix[i], t1[i], -turn, iter-1)
 			//fmt.Println("get1: ", getTotScore(turn, matrix[i], t1[i]))
 			//fmt.Println("get2: ", getTotScore(turn, matrix2[i], t2[i]))
-			s1[i] = getTotScore(turn, matrix[i], t1[i]) + getTotScore(turn, matrix2[i], t2[i]) - int(math.Abs(float64(i-3))) - (tempMax1)/2
+			s1[i] = getTotScore(turn, matrix[i], t1[i]) + getTotScore(turn, matrix2[i], t2[i]) - int(math.Abs(float64(i-3))) - (tempMax1)/5*4
 		}
 	}
 	max := -10000
@@ -347,7 +364,8 @@ func checkWin(m [7][6]Slot) {
 }
 
 func main() {
-	LV := selectLevel()
+	LVin := selectLevel()
+	LV := LVin
 	top := []int{0, 0, 0, 0, 0, 0, 0}
 	var matrix [7][6]Slot
 	matrix = setup(matrix)
@@ -370,6 +388,9 @@ func main() {
 		printMatrix(matrix)
 		checkWin(matrix)
 		fill += 2
+		if slices.Max(top) == 6 && LVin == 5 {
+			LV = 5
+		}
 		if fill == 42 {
 			fmt.Println("Draw")
 			break
