@@ -17,11 +17,11 @@ type Slot struct {
 }
 
 func selectLevel() int {
-	fmt.Println("select Level (1~4) 4 is the hardest :")
+	fmt.Println("select Level (1~5) 5 is the hardest :")
 	var in string
 	fmt.Scanln(&in)
 	t, _ := strconv.Atoi(in)
-	if t > 0 && t <= 4 {
+	if t > 0 && t <= 5 {
 		return t
 	}
 	return selectLevel()
