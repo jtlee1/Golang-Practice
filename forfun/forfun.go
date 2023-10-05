@@ -1,21 +1,14 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"sync"
 )
 
-type SyncedBuffer struct {
-	lock   sync.Mutex
-	buffer bytes.Buffer
-	foo    int
-	bar    string
-}
-
 func main() {
-	p := new(SyncedBuffer)
-	println(p.foo)
-	fmt.Println("bar:", p.bar)
-	//fmt.Printf("%#v\n", p)
+	//c := make(chan int)
+	a := new([5]int)
+	fmt.Println(*a)
+	//loop2()
+	//loop3()
+
 }
