@@ -279,7 +279,7 @@ func getScore(turn int, m [7][6]Slot, goal, weight1, weight2 int) int {
 // output total estimation score
 func getTotScore(turn int, m [7][6]Slot, top []int) int {
 	spec1 := [3]int{3, 10, 10000}
-	spec2 := [3]int{2, 8, 9999}
+	spec2 := [3]int{2, 8, 4800}
 	score := 0
 	for i := 2; i < 5; i++ {
 		score += getScore(turn, m, i, spec1[i-2], spec2[i-2])
@@ -303,13 +303,17 @@ func getMaxScore(m [7][6]Slot, top []int, turn, iter int) (int, int) {
 		matrix2[i] = matrixCopy(m)
 
 		if top[i] >= 6 {
-			s1[i] = -99999
+			s1[i] = -999999
 		} else {
 			matrix[i], _ = place(i, turn, matrix[i], t1[i])
 			matrix2[i], _ = place(i, -turn, matrix2[i], t2[i])
 			tempMax1, _ := getMaxScore(matrix[i], t1[i], -turn, iter-1)
 			//fmt.Println("get1: ", getTotScore(turn, matrix[i], t1[i]))
 			//fmt.Println("get2: ", getTotScore(turn, matrix2[i], t2[i]))
+			checkSol := getTotScore(turn, matrix[i], t1[i])
+			if checkSol >= 10000 {
+				return 99999, i
+			}
 			s1[i] = getTotScore(turn, matrix[i], t1[i]) + getTotScore(turn, matrix2[i], t2[i]) - int(math.Abs(float64(i-3))) - (tempMax1)/5*4
 		}
 	}
