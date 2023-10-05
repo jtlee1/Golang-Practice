@@ -366,6 +366,9 @@ func checkWin(m [7][6]Slot) {
 func main() {
 	LVin := selectLevel()
 	LV := LVin
+	if LVin >= 4 {
+		LV = 4
+	}
 	top := []int{0, 0, 0, 0, 0, 0, 0}
 	var matrix [7][6]Slot
 	matrix = setup(matrix)
