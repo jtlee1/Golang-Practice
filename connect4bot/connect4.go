@@ -16,11 +16,11 @@ type Slot struct {
 }
 
 func selectLevel() int {
-	fmt.Println("select Level (1~3) 3 is the hardest :")
+	fmt.Println("select Level (1~4) 4 is the hardest :")
 	var in string
 	fmt.Scanln(&in)
 	t, _ := strconv.Atoi(in)
-	if t > 0 && t <= 3 {
+	if t > 0 && t <= 4 {
 		return t
 	}
 	return selectLevel()
@@ -46,9 +46,9 @@ func newSlot() Slot {
 
 func setup(m [7][6]Slot) [7][6]Slot {
 	wg := new(sync.WaitGroup)
-	wg.Add(42)
 	for i := 0; i < 7; i++ {
 		for j := 0; j < 6; j++ {
+			wg.Add(1)
 			go func(i, j int) {
 				m[i][j] = newSlot()
 				wg.Done()
@@ -184,54 +184,67 @@ func checkTL(col, row, goal int, ch chan int, m [7][6]Slot, w *sync.WaitGroup) {
 }
 
 func checkWinSub(m [7][6]Slot) int {
-	ch := make(chan int, 69)
+	ch := make(chan int)
 	wg := new(sync.WaitGroup)
-	wg.Add(69) //21+24+12+12
+	count := 0
 	for i := 0; i < 7; i++ {
 		for j := 0; j < 3; j++ {
-			go checkTop(i, j, 4, ch, m, wg)
+			if m[i][j].Taken {
+				count += 1
+				wg.Add(1)
+				go checkTop(i, j, 4, ch, m, wg)
+			}
 		}
 	}
 	for i := 0; i < 4; i++ {
 		for j := 0; j < 6; j++ {
-			go checkRight(i, j, 4, ch, m, wg)
-
+			if m[i][j].Taken {
+				count += 1
+				wg.Add(1)
+				go checkRight(i, j, 4, ch, m, wg)
+			}
 		}
 	}
 	for i := 0; i < 4; i++ {
 		for j := 0; j < 3; j++ {
-			go checkTR(i, j, 4, ch, m, wg)
-			go checkTL(i+3, j, 4, ch, m, wg)
+			if m[i][j].Taken {
+				count += 2
+				wg.Add(2)
+				go checkTR(i, j, 4, ch, m, wg)
+				go checkTL(i+3, j, 4, ch, m, wg)
+			}
 		}
 	}
-	wg.Wait()
 	f := 0
-	for i := 0; i < 69; i++ {
+	for i := 0; i < count; i++ {
 		f += <-ch
 	}
-	close(ch)
 	if f != 0 {
 		f = f / int(math.Abs(float64(f)))
 	}
+	wg.Wait()
 	return f
 }
 
 func getScore(turn int, m [7][6]Slot, goal, weight1, weight2 int) int {
-	ch := make(chan int, 42*4)
+	ch := make(chan int)
+	count := 0
 	wg := new(sync.WaitGroup)
-	wg.Add(42 * 4)
 	for i := 0; i < 7; i++ {
 		for j := 0; j < 6; j++ {
-			go checkTop(i, j, goal, ch, m, wg)
-			go checkRight(i, j, goal, ch, m, wg)
-			go checkTR(i, j, goal, ch, m, wg)
-			go checkTL(i, j, goal, ch, m, wg)
+			if m[i][j].Taken {
+				wg.Add(4)
+				count += 4
+				go checkTop(i, j, goal, ch, m, wg)
+				go checkRight(i, j, goal, ch, m, wg)
+				go checkTR(i, j, goal, ch, m, wg)
+				go checkTL(i, j, goal, ch, m, wg)
+			}
 		}
 	}
-	wg.Wait()
 	f := 0
 	sum := 0
-	for i := 0; i < 168; i++ {
+	for i := 0; i < count; i++ {
 		f = <-ch
 		//fmt.Println(f)
 		if f*turn > 0 {
@@ -241,7 +254,8 @@ func getScore(turn int, m [7][6]Slot, goal, weight1, weight2 int) int {
 			sum += weight2
 		}
 	}
-	close(ch)
+	wg.Wait()
+	//close(ch)
 	return sum
 }
 
